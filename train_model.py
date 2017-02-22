@@ -57,10 +57,9 @@ notcar_features = extract_features(notcars, color_space=color_space,
 
 print('Notcar features complete: {:.1f}s'.format(time.time()-start))
 
-X = np.vstack((car_features, notcar_features)).astype(np.float64)                        
+X = np.vstack((car_features, notcar_features)).astype(np.float64)
 
 X_scaler = StandardScaler().fit(X) # Fit a per-column scaler
-
 scaled_X = X_scaler.transform(X) # Apply the scaler to X
 print('Stacked and standardized: {:.1f}s'.format(time.time()-start))
 
@@ -81,12 +80,14 @@ print('SVC created, begin training: {:.1f}s'.format(time.time()-start))
 svc.fit(X_train, y_train)
 print('Training complete, begin saving: {:.1f}s'.format(time.time()-start))
 
-joblib.dump(svc, 'SVCmodel.pkl') # Save model
+model_and_scaler = {'model': svc, 'scaler': X_scaler}
+
+joblib.dump(model_and_scaler, 'SVCmodel.pkl') # Save model and scaler
 print('Saved, begin reload: {:.1f}s'.format(time.time()-start))
 
-svc2 = joblib.load('SVCmodel.pkl') # Reload model to confirm
+mod_scale = joblib.load('SVCmodel.pkl') # Reload model to confirm
 
 # Check the score of the SVC2
-print('Test Accuracy of SVC2 = {}'.format(round(svc2.score(X_test, y_test), 4)))
+print('Test Accuracy of SVC2 = {}'.format(round(mod_scale['model'].score(X_test, y_test), 4)))
 print('Done: {:.1f}s'.format(time.time()-start))
 
