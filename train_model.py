@@ -30,7 +30,7 @@ color_space = 'HSV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
 orient = 9  # HOG orientations
 pix_per_cell = 8 # HOG pixels per cell
 cell_per_block = 2 # HOG cells per block
-hog_channel = 2 # Can be 0, 1, 2, or "ALL"
+hog_channel = 0 # Can be 0, 1, 2, or "ALL"
 spatial_size = (16, 16) # Spatial binning dimensions
 hist_bins = 16    # Number of histogram bins
 spatial_feat = True # Spatial features on or off
@@ -64,7 +64,7 @@ scaled_X = X_scaler.transform(X) # Apply the scaler to X
 print('Stacked and standardized: {:.1f}s'.format(time.time()-start))
 
 # Define the labels vector
-y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
+y = np.hstack((np.ones(len(car_features), dtype=np.uint8), np.zeros(len(notcar_features), dtype=np.uint8)))
 
 # Split up data into randomized training and test sets
 rand_state = np.random.randint(0, 100)
