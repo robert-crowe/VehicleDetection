@@ -32,3 +32,14 @@ def draw_labeled_bboxes(img, labels):
         cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 6)
     # Return the image
     return img
+
+def temperature(heatmap_list, new_heatmap, memory=25):
+    heatmap_list.append(new_heatmap)
+
+    if len(heatmap_list) > memory:
+        heatmap_list.remove(heatmap_list[0])
+    
+    temp = heatmap_list[0]
+    for i in range(1, len(heatmap_list)):
+        temp = np.add(temp, heatmap_list[i])
+    return temp
