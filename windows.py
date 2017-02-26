@@ -6,17 +6,17 @@ from features import *
 # start and stop positions in both x and y, 
 # window size (x and y dimensions),  
 # and overlap fraction (for both x and y)
-def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None], 
+def slide_window(shape, x_start_stop=[None, None], y_start_stop=[None, None], 
                     xy_window=(64, 64), xy_overlap=(0.5, 0.5)):
     # If x and/or y start/stop positions not defined, set to image size
     if x_start_stop[0] == None:
         x_start_stop[0] = 0
     if x_start_stop[1] == None:
-        x_start_stop[1] = img.shape[1]
+        x_start_stop[1] = shape[1]
     if y_start_stop[0] == None:
         y_start_stop[0] = 0
     if y_start_stop[1] == None:
-        y_start_stop[1] = img.shape[0]
+        y_start_stop[1] = shape[0]
     # Compute the span of the region to be searched    
     xspan = x_start_stop[1] - x_start_stop[0]
     yspan = y_start_stop[1] - y_start_stop[0]
@@ -27,7 +27,7 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
     nx_buffer = np.int(xy_window[0]*(xy_overlap[0]))
     ny_buffer = np.int(xy_window[1]*(xy_overlap[1]))
     nx_windows = np.int((xspan-nx_buffer)/nx_pix_per_step) 
-    ny_windows = np.int((yspan-nx_buffer)/ny_pix_per_step) 
+    ny_windows = np.int((yspan-ny_buffer)/ny_pix_per_step) 
     # Initialize a list to append window positions to
     window_list = []
     # Loop through finding x and y window positions
@@ -44,6 +44,10 @@ def slide_window(img, x_start_stop=[None, None], y_start_stop=[None, None],
             
             # Append window position to list
             window_list.append(((startx, starty), (endx, endy)))
+
+    if endx < x_start_stop[1]: # go to right edge of image
+        window_list.append(((x_start_stop[1]-xy_window[0], starty), (x_start_stop[1], endy)))
+    
     # Return the list of windows
     return window_list
 
@@ -74,7 +78,7 @@ def search_windows(img, windows, clf, scaler, color_space='RGB',
         #6) Predict using your classifier
         prediction = clf.predict(test_features)
         #7) If positive (prediction == 1) then save the window
-        if prediction == 1:
+        if prediction[0] == 1:
             on_windows.append(window)
     #8) Return windows for positive detections
     return on_windows
@@ -89,3 +93,30 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
         cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
     # Return the image copy with boxes drawn
     return imcopy
+
+debug = False # For developing the sliding windows
+
+if debug:
+    # x_start_stop = [None, None] # Min and max in y to search in slide_window()
+    windows = []
+    # xy_window = (200,200) # (W, H)
+    # y_start_stop = [450, 700] # Min and max in y to search in slide_window()
+    # xy_overlap = (0.25, 0.0)
+    img_shape = (720,1280,3)
+    window_groups = [
+        # {'xy_window':(150, 150), 'y_start_stop':[550, 700], 'xy_overlap':(0.7, 0.0), 'x_start_stop':[None, None]},
+        {'xy_window':(64, 64),   'y_start_stop':[400, 528], 'xy_overlap':(0.5, 0.5), 'x_start_stop':[500, img_shape[1]-300]},
+        {'xy_window':(100, 100), 'y_start_stop':[400, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[200, img_shape[1]]},
+        # {'xy_window':(100, 100), 'y_start_stop':[500, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[None,None]},
+    ]
+    for win in window_groups:
+        windows = windows + slide_window(img_shape, x_start_stop=win['x_start_stop'], y_start_stop=win['y_start_stop'], 
+            xy_window=win['xy_window'], xy_overlap=win['xy_overlap'])
+
+    for i in range(1, 7):
+        fname = 'test{}.jpg'.format(i)
+        img = cv2.imread('test_images/{}'.format(fname))
+        img = draw_boxes(img, windows, color=(255, 0, 0), thick=2)
+        cv2.imshow(fname, img)
+    print('{} windows in list.  Waiting ...'.format(len(windows)))
+    cv2.waitKey(0)

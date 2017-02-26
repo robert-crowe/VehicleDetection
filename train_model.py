@@ -9,6 +9,7 @@ from skimage.feature import hog
 from sklearn.model_selection import train_test_split
 from sklearn.externals import joblib
 from features import *
+from config import env
 
 start=time.time()
 
@@ -21,25 +22,23 @@ num_notcars = len(notcar_files)
 print('Got {} car image filenames and {} notcar image filenames: {:.1f}s'.format(num_cars, num_notcars, time.time()-start))
 
 random.shuffle(car_files)
-cars = [car for car in car_files]
 random.shuffle(notcar_files)
-notcars = [notcar for notcar in notcar_files]
 
 ### TODO: Tweak these parameters and see how the results change.
-color_space = 'HSV' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 9  # HOG orientations
-pix_per_cell = 8 # HOG pixels per cell
-cell_per_block = 2 # HOG cells per block
-hog_channel = 2 # Can be 0, 1, 2, or "ALL"
-spatial_size = (16, 16) # Spatial binning dimensions
-hist_bins = 16    # Number of histogram bins
-spatial_feat = True # Spatial features on or off
-hist_feat = True # Histogram features on or off
-hog_feat = True # HOG features on or off
+color_space = env['color_space'] # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
+orient = env['orient']  # HOG orientations
+pix_per_cell = env['pix_per_cell'] # HOG pixels per cell
+cell_per_block = env['cell_per_block'] # HOG cells per block
+hog_channel = env['hog_channel'] # Can be 0, 1, 2, or "ALL"
+spatial_size = env['spatial_size'] # Spatial binning dimensions
+hist_bins = env['hist_bins']    # Number of histogram bins
+spatial_feat = env['spatial_feat'] # Spatial features on or off
+hist_feat = env['hist_feat'] # Histogram features on or off
+hog_feat = env['hog_feat'] # HOG features on or off
 
 print('Begin car features: {:.1f}s'.format(time.time()-start))
 
-car_features = extract_features(cars, color_space=color_space, 
+car_features = extract_features(car_files, color_space=color_space, 
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
@@ -48,7 +47,7 @@ car_features = extract_features(cars, color_space=color_space,
 
 print('Finished car features, begin notcar features: {:.1f}s'.format(time.time()-start))
 
-notcar_features = extract_features(notcars, color_space=color_space, 
+notcar_features = extract_features(notcar_files, color_space=color_space, 
                         spatial_size=spatial_size, hist_bins=hist_bins, 
                         orient=orient, pix_per_cell=pix_per_cell, 
                         cell_per_block=cell_per_block, 
