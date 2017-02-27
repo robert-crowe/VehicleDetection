@@ -30,12 +30,31 @@ from config import env
 
 debug = False # In debug we use the test images instead of the video
 videodebug = False
+frames_dropped = 0
+num_drop_frames = 10
+labels = []
+hot_windows = []
 
 def detect_vehicles(img):
     global clf
     global X_scaler
     global env
-    global windows
+    global windows, hot_windows, labels
+    global frames_dropped, num_drop_frames
+
+    # Drop frames to keep up with video in real time
+    frames_dropped += 1
+    if frames_dropped > num_drop_frames:
+        frames_dropped = 0
+    else:
+        draw_img = np.copy(img)
+        if videodebug:
+            draw_img = draw_boxes(draw_img, windows, color=(0, 255, 0), thick=1)
+            if len(hot_windows) > 0:
+                draw_img = draw_boxes(draw_img, hot_windows, color=(255, 0, 0), thick=1)
+        if len(labels) > 0:
+            draw_img = draw_labeled_bboxes(draw_img, labels)
+        return draw_img
 
     color_space = env['color_space'] # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
     orient = env['orient']  # HOG orientations
@@ -48,8 +67,10 @@ def detect_vehicles(img):
     hist_feat = env['hist_feat'] # Histogram features on or off
     hog_feat = env['hog_feat'] # HOG features on or off
 
-    heat_memory = 25
-    heat_thresh = 50
+    img = cv2.normalize(img, np.zeros(img.shape), alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
+    heat_memory = 50 // num_drop_frames
+    heat_thresh = 90 // num_drop_frames
 
     hot_windows = search_windows(img, windows, clf, X_scaler, color_space=color_space, 
                             spatial_size=spatial_size, hist_bins=hist_bins, 
@@ -63,19 +84,19 @@ def detect_vehicles(img):
     heatmap = add_heat(heatmap, hot_windows)
 
     # Take temperature
-    if not debug:
-        heatmap = temperature(recent_heatmaps, heatmap, memory=heat_memory)
+    heatmap = temperature(recent_heatmaps, heatmap, memory=heat_memory)
         
     # Apply threshold to help remove false positives
     heatmap = apply_threshold(heatmap, heat_thresh)
 
+    draw_img = np.copy(img)
+    if videodebug:
+        draw_img = draw_boxes(draw_img, windows, color=(0, 255, 0), thick=1)
+        draw_img = draw_boxes(draw_img, hot_windows, color=(255, 0, 0), thick=1)
+
     # Find final boxes from heatmap using label function
     labels = label(heatmap)
-    draw_img = np.copy(img)
-    draw_img = draw_labeled_bboxes(np.copy(img), labels)
-
-    if videodebug:
-        draw_img = draw_boxes(draw_img, hot_windows, color=(255, 0, 0), thick=1)
+    draw_img = draw_labeled_bboxes(draw_img, labels)
 
     return draw_img                    
 
@@ -91,16 +112,11 @@ recent_heatmaps = []
 windows = []
 x_start_stop = [None, None] # Min and max in y to search in slide_window()
 img_shape = (720,1280,3)
-window_groups = [
-    # {'xy_window':(150, 150), 'y_start_stop':[550, 700], 'xy_overlap':(0.7, 0.0), 'x_start_stop':[None, None]},
-    {'xy_window':(64, 64),   'y_start_stop':[400, 528], 'xy_overlap':(0.5, 0.5), 'x_start_stop':[500, img_shape[1]-300]},
-    {'xy_window':(100, 100), 'y_start_stop':[400, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[200, img_shape[1]]},
-    # {'xy_window':(100, 100), 'y_start_stop':[500, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[None,None]},
-]
+window_groups = env['window_groups']
 
 for win in window_groups:
-    windows = windows + slide_window(img_shape, x_start_stop=x_start_stop,
-        y_start_stop=win['y_start_stop'], xy_window=win['xy_window'], xy_overlap=win['xy_overlap'])
+        windows = windows + slide_window(img_shape, x_start_stop=win['x_start_stop'], y_start_stop=win['y_start_stop'], 
+            xy_window=win['xy_window'], xy_overlap=win['xy_overlap'])
 
 print('Start')
 if debug:

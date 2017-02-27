@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from features import *
+from config import env
 
 # Define a function that takes an image,
 # start and stop positions in both x and y, 
@@ -44,9 +45,6 @@ def slide_window(shape, x_start_stop=[None, None], y_start_stop=[None, None],
             
             # Append window position to list
             window_list.append(((startx, starty), (endx, endy)))
-
-    if endx < x_start_stop[1]: # go to right edge of image
-        window_list.append(((x_start_stop[1]-xy_window[0], starty), (x_start_stop[1], endy)))
     
     # Return the list of windows
     return window_list
@@ -97,18 +95,9 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
 debug = False # For developing the sliding windows
 
 if debug:
-    # x_start_stop = [None, None] # Min and max in y to search in slide_window()
     windows = []
-    # xy_window = (200,200) # (W, H)
-    # y_start_stop = [450, 700] # Min and max in y to search in slide_window()
-    # xy_overlap = (0.25, 0.0)
     img_shape = (720,1280,3)
-    window_groups = [
-        # {'xy_window':(150, 150), 'y_start_stop':[550, 700], 'xy_overlap':(0.7, 0.0), 'x_start_stop':[None, None]},
-        {'xy_window':(64, 64),   'y_start_stop':[400, 528], 'xy_overlap':(0.5, 0.5), 'x_start_stop':[500, img_shape[1]-300]},
-        {'xy_window':(100, 100), 'y_start_stop':[400, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[200, img_shape[1]]},
-        # {'xy_window':(100, 100), 'y_start_stop':[500, 600], 'xy_overlap':(0.7, 0.7), 'x_start_stop':[None,None]},
-    ]
+    window_groups = env['window_groups']
     for win in window_groups:
         windows = windows + slide_window(img_shape, x_start_stop=win['x_start_stop'], y_start_stop=win['y_start_stop'], 
             xy_window=win['xy_window'], xy_overlap=win['xy_overlap'])
@@ -116,7 +105,7 @@ if debug:
     for i in range(1, 7):
         fname = 'test{}.jpg'.format(i)
         img = cv2.imread('test_images/{}'.format(fname))
-        img = draw_boxes(img, windows, color=(255, 0, 0), thick=2)
+        img = draw_boxes(img, windows, color=(255, 0, 0), thick=1)
         cv2.imshow(fname, img)
     print('{} windows in list.  Waiting ...'.format(len(windows)))
     cv2.waitKey(0)

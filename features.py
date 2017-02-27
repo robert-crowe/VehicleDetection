@@ -110,10 +110,6 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
 
         # Read in each one by one and augment with contrast and transform
         image = cv2.imread(file) # origninal - reads as RGB        
-        file_features = single_img_features(image, color_space=color_space, spatial_size=spatial_size, 
-            hist_bins=hist_bins, orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
-            hog_channel=hog_channel, spatial_feat=spatial_feat, hist_feat=hist_feat, hog_feat=hog_feat)
-        features.append(file_features)
 
         # normalized
         norm = cv2.normalize(image, np.zeros(image.shape), alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
@@ -122,13 +118,6 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
             hog_channel=hog_channel, spatial_feat=spatial_feat, hist_feat=hist_feat, hog_feat=hog_feat)
         features.append(file_features)
         
-        # original flipped horizontally
-        flipped = cv2.flip(image, 1)
-        file_features = single_img_features(flipped, color_space=color_space, spatial_size=spatial_size, 
-            hist_bins=hist_bins, orient=orient, pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
-            hog_channel=hog_channel, spatial_feat=spatial_feat, hist_feat=hist_feat, hog_feat=hog_feat)
-        features.append(file_features)
-
         # normalized flipped horizontally
         norm_flipped = cv2.flip(norm, 1)
         file_features = single_img_features(norm_flipped, color_space=color_space, spatial_size=spatial_size, 
